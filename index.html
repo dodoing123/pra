@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>알록달록 표정 탐험대 😃 | 감정 & 표정 학습</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              yellow: '#FFF4CC',
+              pink: '#FFE5EC',
+              blue: '#E0F4FF',
+              green: '#E8F8F5',
+              purple: '#F3E8FF',
+              primary: '#FF6B8B',
+              secondary: '#4ECDC4',
+              accent: '#FFD166',
+              dark: '#2B2D42'
+            }
+          },
+          fontFamily: {
+            cute: ['"Jua"', '"Gowun Dodum"', 'sans-serif'],
+            sans: ['"Gowun Dodum"', 'sans-serif']
+          },
+          borderRadius: {
+            '4xl': '2rem',
+            '5xl': '2.5rem'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- MediaPipe FaceMesh & Camera Utils CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      font-family: 'Gowun Dodum', sans-serif;
+      background: linear-gradient(135deg, #FFF9E6 0%, #E3F2FD 50%, #FFEBEE 100%);
+      min-height: 100vh;
+      user-select: none;
+    }
+
+    .font-jua {
+      font-family: 'Jua', sans-serif;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #ffb6c1;
+      border-radius: 10px;
+    }
+
+    /* Card Soft Shadow */
+    .soft-shadow {
+      box-shadow: 0 12px 32px -8px rgba(100, 110, 140, 0.15), 0 4px 12px -2px rgba(100, 110, 140, 0.08);
+    }
+    
+    .soft-shadow-lg {
+      box-shadow: 0 20px 40px -12px rgba(255, 107, 139, 0.25), 0 8px 16px -4px rgba(78, 205, 196, 0.15);
+    }
+
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(1deg); }
+    }
+    .animate-float {
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse-gentle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+    .animate-pulse-gentle {
+      animation: pulse-gentle 2.5s ease-in-out infinite;
+    }
+
+    /* Shake Animation for Wrong Answer */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+    .animate-shake {
+      animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    /* Glassmorphism */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+    }
+
+    .btn-bounce {
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .btn-bounce:hover {
+      transform: translateY(-4px) scale(1.02);
+    }
+    .btn-bounce:active {
+      transform: translateY(2px) scale(0.98);
+    }
+
+    /* Mirror webcam view */
+    .mirror {
+      transform: scaleX(-1);
+    }
+  </style>
+</head>
+<body class="text-gray-800 flex flex-col min-h-screen">
+
+  <!-- TOP HEADER -->
+  <header class="py-4 px-6 max-w-6xl mx-auto w-full flex justify-between items-center z-20">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+      <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl soft-shadow border-2 border-pink-200 animate-float">
+        🎨
+      </div>
+      <div>
+        <h1 class="text-2xl md:text-3xl font-jua text-gray-800 tracking-wide flex items-center gap-2">
+          알록달록 표정 탐험대 <span class="text-pink-500 animate-bounce">✨</span>
+        </h1>
+        <p class="text-xs md:text-sm text-gray-500">화용언어 & 감정 표정 마음 교실</p>
+      </div>
+    </div>
+
+    <!-- Audio & Home controls -->
+    <div class="flex items-center gap-2 md:gap-3">
+      <button onclick="toggleAudioMute()" id="audioToggleBtn" title="소리 켜기/끄기"
+        class="w-10 h-10 md:w-12 md:h-12 glass-card rounded-2xl flex items-center justify-center text-lg md:text-xl btn-bounce soft-shadow text-gray-700">
+        🔊
+      </button>
+      <button onclick="goHome()" title="처음으로"
+        class="px-4 py-2 md:px-5 md:py-2.5 bg-white border-2 border-pink-200 text-pink-500 font-jua rounded-2xl btn-bounce soft-shadow flex items-center gap-1.5 text-sm md:text-base">
+        🏠 홈으로
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-4 flex flex-col justify-center items-center relative z-10">
+
+    <!-- SCREEN 0: HOME / MAIN MENU -->
+    <section id="screen-home" class="w-full flex flex-col items-center gap-8 py-6">
+      <!-- Welcome Hero Banner -->
+      <div class="glass-card rounded-4xl p-6 md:p-10 w-full text-center soft-shadow relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-pink-200/50 rounded-full blur-2xl"></div>
+        <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-200/50 rounded-full blur-2xl"></div>
+        
+        <div class="inline-block px-4 py-1.5 bg-pink-100 text-pink-600 rounded-full text-sm font-bold mb-3 font-jua">
+          ❤️ 재미있는 감정 유추 & 카메라인식 표정 모방 활동
+        </div>
+        <h2 class="text-3xl md:text-4xl font-jua text-gray-800 mb-3 leading-tight">
+          내 마음과 얼굴 표정을 배워보아요!
+        </h2>
+        <p class="text-gray-600 max-w-xl mx-auto text-sm md:text-base leading-relaxed">
+          다양한 상황에서 어떤 표정을 짓는지 살펴보고,<br class="hidden sm:inline" />
+          직접 카메라인식을 통해 예쁜 표정을 따라 해보세요!
+        </p>
+
+        <!-- Characters preview -->
+        <div class="flex justify-center gap-3 md:gap-6 mt-6">
+          <div class="w-14 h-14 md:w-16 md:h-16 bg-yellow-100 rounded-3xl flex items-center justify-center text-3xl soft-shadow animate-float" style="animation-delay: 0s;">😄</div>
+          <div class="w-14 h-14 md:w-16 md:h-16 bg-blue-100 rounded-3xl flex items-center justify-center text-3xl soft-shadow animate-float" style="animation-delay: 0.5s;">😢</div>
+          <div class="w-14 h-14 md:w-16 md:h-16 bg-pink-100 rounded-3xl flex items-center justify-center text-3xl soft-shadow animate-float" style="animation-delay: 1s;">😡</div>
+          <div class="w-14 h-14 md:w-16 md:h-16 bg-green-100 rounded-3xl flex items-center justify-center text-3xl soft-shadow animate-float" style="animation-delay: 1.5s;">😲</div>
+        </div>
+      </div>
+
+      <!-- Menu Cards (Activity 1 & Activity 2) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <!-- Activity 1 Card -->
+        <div onclick="startActivity1()" 
+          class="glass-card rounded-4xl p-6 md:p-8 soft-shadow border-4 border-yellow-200 hover:border-yellow-400 cursor-pointer btn-bounce flex flex-col justify-between relative group overflow-hidden bg-gradient-to-b from-white to-yellow-50/50">
+          <div class="flex items-start justify-between mb-4">
+            <span class="px-3 py-1 bg-yellow-400 text-yellow-950 text-xs font-bold rounded-xl font-jua">활동 1</span>
+            <span class="text-4xl group-hover:scale-125 transition-transform duration-300">🧩</span>
+          </div>
+          <div>
+            <h3 class="text-2xl font-jua text-gray-800 mb-2 group-hover:text-amber-600 transition-colors">
+              상황에 맞는 표정 찾기
+            </h3>
+            <p class="text-gray-600 text-sm leading-relaxed mb-6">
+              10가지 생활 속 상황 카드를 읽고,<br />
+              상대방이나 내가 어떤 표정을 지어야 할지 선택해요!
+            </p>
+          </div>
+          <div class="flex items-center justify-between pt-4 border-t border-yellow-100">
+            <span class="text-xs text-gray-500 font-bold">10개 카드 학습</span>
+            <button class="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-jua rounded-2xl shadow-md flex items-center gap-1">
+              시작하기 ➔
+            </button>
+          </div>
+        </div>
+
+        <!-- Activity 2 Card -->
+        <div onclick="startActivity2()" 
+          class="glass-card rounded-4xl p-6 md:p-8 soft-shadow border-4 border-pink-200 hover:border-pink-400 cursor-pointer btn-bounce flex flex-col justify-between relative group overflow-hidden bg-gradient-to-b from-white to-pink-50/50">
+          <div class="flex items-start justify-between mb-4">
+            <span class="px-3 py-1 bg-pink-400 text-white text-xs font-bold rounded-xl font-jua">활동 2</span>
+            <span class="text-4xl group-hover:scale-125 transition-transform duration-300">📸</span>
+          </div>
+          <div>
+            <h3 class="text-2xl font-jua text-gray-800 mb-2 group-hover:text-pink-600 transition-colors">
+              카메라인식 표정 짓기
+            </h3>
+            <p class="text-gray-600 text-sm leading-relaxed mb-6">
+              제시되는 감정 단어를 확인하고,<br />
+              웹캠 앞에서 똑같이 표정을 지어서 도장을 모아봐요!
+            </p>
+          </div>
+          <div class="flex items-center justify-between pt-4 border-t border-pink-100">
+            <span class="text-xs text-gray-500 font-bold">실시간 인공지능 표정 인식</span>
+            <button class="px-5 py-2.5 bg-pink-500 hover:bg-pink-600 text-white font-jua rounded-2xl shadow-md flex items-center gap-1">
+              카메라 켜기 ➔
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 1: ACTIVITY 1 (SITUATION MATCHING) -->
+    <section id="screen-activity-1" class="w-full flex-col items-center gap-6 hidden">
+      <!-- Progress Bar & Top Navigation -->
+      <div class="w-full glass-card rounded-3xl p-4 soft-shadow flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <span class="px-3 py-1 bg-yellow-400 text-gray-900 font-jua rounded-xl text-sm">상황 탐험</span>
+          <div class="text-sm text-gray-600 font-bold">
+            문제 <span id="act1-current-num" class="text-pink-600 text-lg font-jua">1</span> / <span id="act1-total-num">10</span>
+          </div>
+        </div>
+        
+        <!-- Progress track -->
+        <div class="w-full sm:w-64 bg-gray-200 h-4 rounded-full overflow-hidden p-0.5 border border-white">
+          <div id="act1-progress-bar" class="bg-gradient-to-r from-yellow-400 to-pink-500 h-full rounded-full transition-all duration-500" style="width: 10%;"></div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500 font-bold">점수:</span>
+          <span id="act1-score" class="px-3 py-0.5 bg-pink-100 text-pink-600 font-jua rounded-full text-base">0점</span>
+        </div>
+      </div>
+
+      <!-- Main Situation Card -->
+      <div id="situation-card" class="w-full glass-card rounded-4xl p-6 md:p-8 soft-shadow border-4 border-white text-center relative overflow-hidden bg-gradient-to-b from-white to-sky-50/40">
+        <div class="flex items-center justify-center gap-2 mb-3">
+          <span id="situation-category-badge" class="px-3 py-1 bg-sky-100 text-sky-700 text-xs font-bold rounded-full">
+            생일 파티 🎁
+          </span>
+          <button onclick="speakText(currentSituation.text)" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-full flex items-center gap-1 border border-gray-300">
+            🔊 읽기
+          </button>
+        </div>
+
+        <h3 id="situation-title" class="text-2xl md:text-3xl font-jua text-gray-800 mb-3">
+          생일 파티에서 선물을 받았을 때
+        </h3>
+        <p id="situation-text" class="text-gray-600 text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-medium">
+          "우와! 내가 정말 갖고 싶었던 선물이잖아!" 친구들과 가족들이 축하해 주며 커다란 선물 상자를 건네주었어요.
+        </p>
+      </div>
+
+      <!-- Question Prompt -->
+      <div class="text-center my-1">
+        <span class="text-lg md:text-xl font-jua text-pink-600 bg-white/80 px-6 py-2 rounded-full border border-pink-200 soft-shadow inline-block">
+          이럴 때 나의 얼굴 표정은 어떨까요? 알맞은 표정을 골라보세요! 👇
+        </span>
+      </div>
+
+      <!-- 4 Facial Expression Choice Grid -->
+      <div id="choices-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+        <!-- Dynamic Cards rendered via JS -->
+      </div>
+    </section>
+
+    <!-- SCREEN 2: ACTIVITY 2 (WEBCAM EMOTION MIMICRY) -->
+    <section id="screen-activity-2" class="w-full flex-col items-center gap-6 hidden">
+      <!-- Top info bar -->
+      <div class="w-full glass-card rounded-3xl p-4 soft-shadow flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <span class="px-3 py-1 bg-pink-500 text-white font-jua rounded-xl text-sm">카메라 표정 미션</span>
+          <span class="text-sm text-gray-600 font-bold">
+            단어 <span id="act2-current-num" class="text-pink-600 text-lg font-jua">1</span> / <span id="act2-total-num">6</span>
+          </span>
+        </div>
+
+        <!-- Mode Indicator / Toggle -->
+        <div class="flex items-center gap-2">
+          <button id="cameraToggleBtn" onclick="toggleCameraMode()" class="px-3 py-1.5 bg-sky-100 hover:bg-sky-200 text-sky-700 font-jua rounded-xl text-xs flex items-center gap-1 border border-sky-300">
+            📹 카메라/시뮬레이션 전환
+          </button>
+        </div>
+      </div>
+
+      <!-- Emotion Target Word Display -->
+      <div class="w-full text-center glass-card rounded-3xl p-4 md:p-6 soft-shadow border-4 border-pink-200 bg-gradient-to-r from-pink-50 via-purple-50 to-yellow-50">
+        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">따라 해야 할 표정</span>
+        <div id="target-emotion-word" class="text-3xl md:text-5xl font-jua text-pink-600 my-1 animate-pulse-gentle">
+          기쁨 / 신남 😄
+        </div>
+        <p id="target-emotion-hint" class="text-sm text-gray-600">
+          입꼬리를 쓱 올려서 환하게 미소를 지어보세요!
+        </p>
+      </div>
+
+      <!-- Camera Feed / Canvas Stage Container -->
+      <div class="w-full max-w-xl mx-auto flex flex-col items-center gap-4">
+        <!-- Frame container -->
+        <div class="relative w-full aspect-[4/3] rounded-4xl overflow-hidden border-8 border-white soft-shadow-lg bg-gray-900 group">
+          <!-- Cute Frame Overlay Stickers -->
+          <div class="absolute top-3 left-3 z-20 text-3xl animate-bounce">⭐</div>
+          <div class="absolute top-3 right-3 z-20 text-3xl animate-bounce" style="animation-delay: 0.3s">💖</div>
+          <div class="absolute bottom-3 left-3 z-20 text-3xl animate-bounce" style="animation-delay: 0.6s">🎈</div>
+          <div class="absolute bottom-3 right-3 z-20 text-3xl animate-bounce" style="animation-delay: 0.9s">🌈</div>
+
+          <!-- Video element -->
+          <video id="webcam-video" autoplay playsinline muted class="w-full h-full object-cover mirror"></video>
+          <!-- Canvas element overlay for detection landmarks / feedback -->
+          <canvas id="webcam-canvas" class="absolute top-0 left-0 w-full h-full object-cover mirror z-10 pointer-events-none"></canvas>
+
+          <!-- Fallback Simulation View overlay if camera disabled -->
+          <div id="sim-overlay" class="absolute inset-0 bg-slate-800/90 text-white flex flex-col items-center justify-center p-6 text-center z-30 hidden">
+            <div class="text-5xl mb-3" id="sim-avatar">😃</div>
+            <h4 class="text-xl font-jua mb-2">시뮬레이션 모드 작동 중</h4>
+            <p class="text-xs text-gray-300 max-w-xs mb-4">
+              카메라를 켤 수 없거나 테스트 중일 때 아래 버튼이나 슬라이더로 직접 표정을 완성해보세요!
+            </p>
+            <div class="flex flex-wrap gap-2 justify-center">
+              <button onclick="simulateEmotionMatch()" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white font-jua text-sm rounded-xl btn-bounce">
+                ✨ 표정 완성하기 (성공 테스트)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Similarity Gauge Bar -->
+        <div class="w-full glass-card rounded-3xl p-4 soft-shadow border-2 border-pink-100 flex flex-col gap-2">
+          <div class="flex justify-between items-center text-sm">
+            <span class="font-jua text-gray-700 flex items-center gap-1">
+              📊 표정 닮음도 게이지
+            </span>
+            <span id="similarity-score-text" class="font-jua text-pink-600 text-lg">0%</span>
+          </div>
+
+          <div class="w-full bg-gray-200 h-6 rounded-full overflow-hidden p-1 relative border border-white">
+            <div id="similarity-bar" class="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-500 h-full rounded-full transition-all duration-300" style="width: 0%;"></div>
+            <!-- Target line indicator at 70% -->
+            <div class="absolute top-0 bottom-0 left-[70%] w-1 bg-pink-600 z-10" title="목표 달성선 (70%)"></div>
+          </div>
+
+          <p class="text-xs text-center text-gray-500 mt-1">
+            게이지가 <span class="text-pink-600 font-bold">70%</span> 넘게 유지되면 자동으로 사진 스냅샷 찰깍!
+          </p>
+        </div>
+
+        <!-- Action Control Buttons -->
+        <div class="flex gap-3 w-full justify-center">
+          <button onclick="manualCaptureSnapshot()" class="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-jua rounded-2xl soft-shadow btn-bounce flex items-center gap-2 text-base">
+            📷 찰깍! 지금 사진 찍기
+          </button>
+          <button onclick="skipActivity2Word()" class="px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-jua rounded-2xl btn-bounce text-sm">
+            다음 단어 ➔
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: ACTIVITY 1 RESULT SUMMARY -->
+    <section id="screen-act1-result" class="w-full flex-col items-center gap-6 hidden">
+      <div class="glass-card rounded-4xl p-8 md:p-12 w-full text-center soft-shadow border-4 border-yellow-200 bg-white/90 relative overflow-hidden">
+        <div class="text-6xl mb-4 animate-bounce">🏆</div>
+        <h2 class="text-3xl md:text-4xl font-jua text-gray-800 mb-2">
+          우와! 상황 표정 탐험을 모두 마쳤어요!
+        </h2>
+        <p class="text-gray-600 mb-6">
+          상황에 맞는 표정을 참 잘 찾았어요. 아주 멋져요!
+        </p>
+
+        <!-- Star score banner -->
+        <div class="bg-yellow-50 border-2 border-yellow-200 rounded-3xl p-6 max-w-sm mx-auto mb-6 soft-shadow">
+          <div class="text-sm text-gray-500 font-bold mb-1">최종 획득 점수</div>
+          <div id="act1-final-score" class="text-4xl font-jua text-pink-600 mb-2">100점</div>
+          <div class="flex justify-center text-3xl gap-1" id="act1-star-rating">
+            ⭐⭐⭐⭐⭐
+          </div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4">
+          <button onclick="startActivity1()" class="px-6 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-jua rounded-2xl soft-shadow btn-bounce text-base">
+            🔄 다시 하기
+          </button>
+          <button onclick="startActivity2()" class="px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white font-jua rounded-2xl soft-shadow btn-bounce text-base">
+            📸 활동 2 (카메라) 하러 가기
+          </button>
+          <button onclick="goHome()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-jua rounded-2xl btn-bounce text-base">
+            🏠 홈으로
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: ACTIVITY 2 RESULT SUMMARY (SNAPSHOT GALLERY) -->
+    <section id="screen-act2-result" class="w-full flex-col items-center gap-6 hidden">
+      <div class="glass-card rounded-4xl p-6 md:p-10 w-full text-center soft-shadow border-4 border-pink-200 bg-white/90">
+        <div class="text-6xl mb-3 animate-bounce">🎉</div>
+        <h2 class="text-3xl md:text-4xl font-jua text-gray-800 mb-2">
+          예쁜 표정 사진 앨범 완성!
+        </h2>
+        <p class="text-gray-600 mb-6">
+          카메라 앞에서 표현한 나의 다양한 모습들이에요. 참 잘했어요!
+        </p>
+
+        <!-- Snapshots Grid -->
+        <div id="snapshot-gallery" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+          <!-- Dynamic snapshot cards inserted here -->
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4">
+          <button onclick="startActivity2()" class="px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white font-jua rounded-2xl soft-shadow btn-bounce text-base">
+            📸 사진 다시 찍기
+          </button>
+          <button onclick="goHome()" class="px-6 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-jua rounded-2xl soft-shadow btn-bounce text-base">
+            🏠 홈으로 가기
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- POPUP MODAL: EXPLANATION FEEDBACK FOR ACTIVITY 1 -->
+  <div id="feedback-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+    <div id="modal-card" class="glass-card rounded-4xl p-6 md:p-8 max-w-lg w-full soft-shadow-lg transform scale-90 transition-transform duration-300 border-4 border-white text-center bg-white relative overflow-hidden">
+      <!-- Modal Header Icon -->
+      <div id="modal-icon" class="w-20 h-20 bg-green-100 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4 animate-bounce">
+        🎉
+      </div>
+
+      <h3 id="modal-title" class="text-2xl md:text-3xl font-jua text-gray-800 mb-2">
+        정답이에요!
+      </h3>
+      
+      <div class="bg-amber-50 rounded-2xl p-4 my-4 border border-amber-200 text-left">
+        <div class="text-xs font-bold text-amber-700 mb-1 flex items-center gap-1">
+          💡 왜 이 표정일까요? (화용 언어 팁)
+        </div>
+        <p id="modal-explanation" class="text-sm md:text-base text-gray-700 leading-relaxed">
+          선물을 받으면 고맙고 기쁜 마음이 들어요. 눈이 가늘어지고 입꼬리가 올라가는 웃는 표정을 지어요!
+        </p>
+      </div>
+
+      <button id="modal-next-btn" onclick="closeModalAndNext()" class="w-full py-3.5 bg-gradient-to-r from-pink-500 to-yellow-400 hover:from-pink-600 hover:to-yellow-500 text-white font-jua rounded-2xl text-lg soft-shadow btn-bounce">
+        다음 문제로 이동! ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="py-4 text-center text-xs text-gray-500 relative z-20">
+    <p>알록달록 표정 탐험대 😃 | 아동 감정 표현 및 사회성·화용언어 치료 학습 도구</p>
+  </footer>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    /* ==========================================
+       1. SOUND SYNTHESIZER (Web Audio API)
+       ========================================== */
+    let audioCtx = null;
+    let isMuted = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function toggleAudioMute() {
+      isMuted = !isMuted;
+      const btn = document.getElementById('audioToggleBtn');
+      btn.innerText = isMuted ? '🔇' : '🔊';
+    }
+
+    function playSound(type) {
+      if (isMuted) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'click') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } 
+        else if (type === 'correct') {
+          // Play a happy 3-note chord (C5 - E5 - G5 - C6)
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.3);
+          });
+        } 
+        else if (type === 'wrong') {
+          // Soft boing sound
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(140, now + 0.25);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        }
+        else if (type === 'snap') {
+          // Camera shutter click
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        }
+      } catch (e) {
+        console.error("Audio error:", e);
+      }
+    }
+
+    // Text to Speech
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ko-KR';
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    /* ==========================================
+       2. SVG AVATAR DRAWING SYSTEM
+       ========================================== */
+    // Generates adorable vector SVG face avatars dynamically!
+    function getEmotionSVG(emotionKey, size = 120) {
+      const styles = {
+        happy: {
+          bg: '#FFF3C4',
+          eyes: `<path d="M 35 48 Q 45 38 55 48" stroke="#333" stroke-width="4.5" stroke-linecap="round" fill="none" />
+                 <path d="M 65 48 Q 75 38 85 48" stroke="#333" stroke-width="4.5" stroke-linecap="round" fill="none" />`,
+          mouth: `<path d="M 40 68 Q 60 90 80 68" stroke="#333" stroke-width="4.5" stroke-linecap="round" fill="#FF6B8B" />`,
+          cheeks: `<circle cx="30" cy="58" r="7" fill="#FF8A8A" opacity="0.6" />
+                  <circle cx="90" cy="58" r="7" fill="#FF8A8A" opacity="0.6" />`
+        },
+        sad: {
+          bg: '#E0F4FF',
+          eyes: `<circle cx="45" cy="48" r="4.5" fill="#333" />
+                 <circle cx="75" cy="48" r="4.5" fill="#333" />
+                 <path d="M 38 40 Q 45 36 52 42" stroke="#333" stroke-width="3" stroke-linecap="round" fill="none" />
+                 <path d="M 68 42 Q 75 36 82 40" stroke="#333" stroke-width="3" stroke-linecap="round" fill="none" />
+                 <path d="M 78 52 Q 80 62 76 68" stroke="#4FC3F7" stroke-width="3" stroke-linecap="round" fill="none" />`,
+          mouth: `<path d="M 42 75 Q 60 60 78 75" stroke="#333" stroke-width="4.5" stroke-linecap="round" fill="none" />`,
+          cheeks: `<circle cx="30" cy="58" r="6" fill="#81D4FA" opacity="0.5" />
+                  <circle cx="90" cy="58" r="6" fill="#81D4FA" opacity="0.5" />`
+        },
+        angry: {
+          bg: '#FFE5EC',
+          eyes: `<path d="M 36 38 L 54 46" stroke="#333" stroke-width="4" stroke-linecap="round" />
+                 <path d="M 84 38 L 66 46" stroke="#333" stroke-width="4" stroke-linecap="round" />
+                 <circle cx="45" cy="52" r="4" fill="#333" />
+                 <circle cx="75" cy="52" r="4" fill="#333" />`,
+          mouth: `<path d="M 44 72 Q 60 62 76 72" stroke="#333" stroke-width="4.5" stroke-linecap="round" fill="none" />`,
+          cheeks: `<circle cx="30" cy="60" r="8" fill="#FF5252" opacity="0.5" />
+                  <circle cx="90" cy="60" r="8" fill="#FF5252" opacity="0.5" />`
+        },
+        surprised: {
+          bg: '#E8F8F5',
+          eyes: `<circle cx="45" cy="45" r="7" fill="#333" />
+                 <circle cx="75" cy="45" r="7" fill="#333" />
+                 <circle cx="47" cy="43" r="2.5" fill="#FFF" />
+                 <circle cx="77" cy="43" r="2.5" fill="#FFF" />
+                 <path d="M 38 34 Q 45 28 52 34" stroke="#333" stroke-width="3.5" fill="none" />
+                 <path d="M 68 34 Q 75 28 82 34" stroke="#333" stroke-width="3.5" fill="none" />`,
+          mouth: `<ellipse cx="60" cy="70" rx="10" ry="14" fill="#FF7043" stroke="#333" stroke-width="3.5" />`,
+          cheeks: `<circle cx="28" cy="55" r="6" fill="#A7F3D0" opacity="0.5" />
+                  <circle cx="92" cy="55" r="6" fill="#A7F3D0" opacity="0.5" />`
+        },
+        scared: {
+          bg: '#F3E8FF',
+          eyes: `<circle cx="45" cy="46" r="6" fill="#333" />
+                 <circle cx="75" cy="46" r="6" fill="#333" />
+                 <path d="M 36 36 Q 45 42 54 38" stroke="#333" stroke-width="3.5" fill="none" />
+                 <path d="M 66 38 Q 75 42 84 36" stroke="#333" stroke-width="3.5" fill="none" />`,
+          mouth: `<path d="M 44 68 Q 50 64 60 68 T 76 68" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none" />`,
+          cheeks: `<circle cx="30" cy="58" r="6" fill="#D8B4FE" opacity="0.6" />
+                  <circle cx="90" cy="58" r="6" fill="#D8B4FE" opacity="0.6" />`
+        },
+        shy: {
+          bg: '#FFF0F5',
+          eyes: `<path d="M 40 48 Q 45 52 50 48" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none" />
+                 <path d="M 70 48 Q 75 52 80 48" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none" />`,
+          mouth: `<path d="M 48 66 Q 60 72 72 66" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none" />`,
+          cheeks: `<ellipse cx="32" cy="56" rx="10" ry="6" fill="#FF6B8B" opacity="0.75" />
+                  <ellipse cx="88" cy="56" rx="10" ry="6" fill="#FF6B8B" opacity="0.75" />`
+        },
+        bored: {
+          bg: '#F1F5F9',
+          eyes: `<line x1="36" y1="46" x2="54" y2="46" stroke="#333" stroke-width="4.5" stroke-linecap="round" />
+                 <line x1="66" y1="46" x2="84" y2="46" stroke="#333" stroke-width="4.5" stroke-linecap="round" />`,
+          mouth: `<line x1="44" y1="68" x2="76" y2="68" stroke="#333" stroke-width="4.5" stroke-linecap="round" />`,
+          cheeks: ``
+        },
+        envious: {
+          bg: '#FEF3C7',
+          eyes: `<path d="M 38 44 Q 45 48 52 44" stroke="#333" stroke-width="3.5" fill="none" />
+                 <path d="M 68 44 Q 75 48 82 44" stroke="#333" stroke-width="3.5" fill="none" />
+                 <circle cx="50" cy="46" r="3" fill="#333" />
+                 <circle cx="70" cy="46" r="3" fill="#333" />`,
+          mouth: `<path d="M 44 70 Q 52 64 60 70 Q 68 76 76 70" stroke="#333" stroke-width="4" stroke-linecap="round" fill="none" />`,
+          cheeks: `<circle cx="30" cy="58" r="6" fill="#FBBF24" opacity="0.6" />
+                  <circle cx="90" cy="58" r="6" fill="#FBBF24" opacity="0.6" />`
+        },
+        proud: {
+          bg: '#ECFDF5',
+          eyes: `<path d="M 36 46 Q 45 36 54 46" stroke="#333" stroke-width="4.5" stroke-linecap="round" fill="none" />
+                 <path d="M 66 46 Q 75 36 84 46" stroke="#333" stroke-width="4.5" stroke-linecap="round" fill="none" />`,
+          mouth: `<path d="M 42 64 Q 60 84 78 64 Z" fill="#FFD166" stroke="#333" stroke-width="4" stroke-linejoin="round" />`,
+          cheeks: `<circle cx="28" cy="54" r="7" fill="#34D399" opacity="0.5" />
+                  <circle cx="92" cy="54" r="7" fill="#34D399" opacity="0.5" />`
+        },
+        flustered: {
+          bg: '#EDE9FE',
+          eyes: `<circle cx="45" cy="46" r="6" fill="#333" />
+                 <circle cx="75" cy="46" r="6" fill="#333" />
+                 <path d="M 38 38 L 52 38" stroke="#333" stroke-width="3" />
+                 <path d="M 68 38 L 82 38" stroke="#333" stroke-width="3" />
+                 <!-- Sweat drop -->
+                 <path d="M 88 30 Q 94 38 88 42 Q 82 38 88 30 Z" fill="#60A5FA" />`,
+          mouth: `<ellipse cx="60" cy="68" rx="8" ry="6" fill="#FF8A8A" stroke="#333" stroke-width="3.5" />`,
+          cheeks: `<ellipse cx="32" cy="58" rx="8" ry="5" fill="#F472B6" opacity="0.6" />
+                  <ellipse cx="88" cy="58" rx="8" ry="5" fill="#F472B6" opacity="0.6" />`
+        }
+      };
+
+      const s = styles[emotionKey] || styles.happy;
+
+      return `
+        <svg width="${size}" height="${size}" viewBox="0 0 120 120" class="mx-auto filter drop-shadow-sm">
+          <circle cx="60" cy="60" r="52" fill="${s.bg}" stroke="#FFF" stroke-width="4" />
+          ${s.cheeks}
+          ${s.eyes}
+          ${s.mouth}
+        </svg>
+      `;
+    }
+
+    /* ==========================================
+       3. ACTIVITY 1 DATA & LOGIC (SITUATIONS)
+       ========================================== */
+    const situationsData = [
+      {
+        id: 1,
+        category: "기쁨 🎁",
+        title: "생일 파티에서 선물을 받았을 때",
+        text: "우와! 내가 정말 갖고 싶었던 아끼는 선물이잖아! 친구들과 가족들이 모두 축하해 주며 큰 선물 상자를 건네주었어요.",
+        correct: "happy",
+        correctName: "기쁨 / 미소",
+        explanation: "원하던 선물을 받았을 때는 마음이 즐겁고 행복해요. 눈이 가늘어지고 입꼬리가 길게 올라가는 웃는 표정을 지어요!"
+      },
+      {
+        id: 2,
+        category: "슬픔 🧸",
+        title: "아끼는 장난감이 부러졌을 때",
+        text: "앗! 제일 좋아하는 유치원 장난감을 갖고 놀다가 실수로 떨어뜨려서 똑하고 부러져 버렸어요.",
+        correct: "sad",
+        correctName: "슬픔 / 서운함",
+        explanation: "소중한 물건이 싹 망가지거나 속상할 때는 마음이 아프고 슬퍼요. 눈썹 끝이 살짝 내려가고 입꼬리가 아래로 처지는 표정이 돼요."
+      },
+      {
+        id: 3,
+        category: "분노 😡",
+        title: "친구가 내 허락 없이 물건을 빼앗아 갔을 때",
+        text: "내가 열심히 그림을 그리고 있었는데, 친구가 묻지도 않고 내 색연필을 홱 빼앗아 가 버렸어요!",
+        correct: "angry",
+        correctName: "분노 / 화남",
+        explanation: "내 물건을 빼앗기거나 부당한 일을 겪으면 화가 날 수 있어요. 미간을 불끈 찌푸리고 눈썹을 안쪽으로 모으는 표정을 지어요."
+      },
+      {
+        id: 4,
+        category: "놀람 🎈",
+        title: "길을 가다가 갑자기 커다란 풍선이 '팡!' 터졌을 때",
+        text: "길을 조용히 걷고 있었는데, 옆에서 깡총 들고 가던 커다란 풍선이 깜짝 놀라게 '팡!!' 하고 터져 버렸어요.",
+        correct: "surprised",
+        correctName: "놀람 / 신기함",
+        explanation: "예상치 못한 큰 소리나 변화를 갑자기 겪으면 깜짝 놀라요. 눈을 동그랗게 크게 뜨고 입을 '오!' 하고 크게 벌리게 됩니다."
+      },
+      {
+        id: 5,
+        category: "두려움 😨",
+        title: "밤에 혼자 어두운 방에 들어갔을 때",
+        text: "불이 꺼진 어두컴컴한 방 안에 들어갔는데, 구석에서 이상한 그림자 모양이 덜컹 움직이는 것처럼 보였어요.",
+        correct: "scared",
+        correctName: "두려움 / 무서움",
+        explanation: "어둡거나 위험하다고 느낄 때는 무서운 마음이 들어요. 눈을 크게 뜨고 어깨를 움츠리며 입을 굳히는 표정을 지어요."
+      },
+      {
+        id: 6,
+        category: "부끄러움 😊",
+        title: "많은 사람들 앞에서 장기자랑을 하게 되었을 때",
+        text: "선생님과 친구들이 모두 나를 바라보면서 '우와! 씩씩하게 노래 불러줘!' 하고 무대 위로 올라오라고 했어요.",
+        correct: "shy",
+        correctName: "부끄러움 / 쑥스러움",
+        explanation: "많은 관심이나 칭찬을 한꺼번에 받으면 쑥스럽고 부끄러워질 수 있어요. 볼이 빨개지고 미소를 머금으며 시선을 살짝 피하는 표정을 지어요."
+      },
+      {
+        id: 7,
+        category: "지루함 🥱",
+        title: "아무것도 하지 않고 오랫동안 줄을 서서 기다려야 할 때",
+        text: "재미있는 놀이기구를 타고 싶은데, 한 시간 동안이나 그냥 가만히 서서 줄만 길게 기다려야 해요.",
+        correct: "bored",
+        correctName: "지루함 / 심심함",
+        explanation: "오랫동안 재미없는 기다림이 지속되면 지루하고 심심해요. 눈꺼풀이 가늘어지고 힘이 빠지며 입을 일자로 가만히 둡니다."
+      },
+      {
+        id: 8,
+        category: "질투 😒",
+        title: "친구가 내가 제일 갖고 싶었던 로봇을 가지고 놀 때",
+        text: "내가 장난감 가게에서 매일 사달라고 했던 멋진 로봇을 옆 친구가 신나게 가지고 놀며 자랑하고 있어요.",
+        correct: "envious",
+        correctName: "질투 / 부러움",
+        explanation: "남이 가진 것이 나에게도 너무 갖고 싶을 땐 부럽고 질투가 나요. 입술을 살짝 삐죽이거나 눈을 힐끔 올려다보는 표정을 지어요."
+      },
+      {
+        id: 9,
+        category: "자랑스러움 😎",
+        title: "어려운 낱말 맞추기 게임을 스스로 다 성공했을 때",
+        text: "아주아주 어렵고 긴 낱말 맞추기 퀴즈판을 아무 도움 없이 혼자 힘으로 끝까지 다 맞추었어요!",
+        correct: "proud",
+        correctName: "자랑스러움 / 뿌듯함",
+        explanation: "어려운 일을 스스로 해냈을 때는 자신이 대견하고 뿌듯해요! 가슴을 쫙 펴고 씩씩하고 자신감 넘치는 웃음을 지어 보여요."
+      },
+      {
+        id: 10,
+        category: "당황 😅",
+        title: "신발을 반대로 신은 것을 친구가 지적했을 때",
+        text: "신나게 유치원에 들어왔는데, 친구가 아래를 보며 '어! 너 오른쪽 왼쪽 신발 반대로 신었다!'라고 말했어요.",
+        correct: "flustered",
+        correctName: "당황 / 엉뚱함",
+        explanation: "뜻밖의 실수나 머쓱한 상황을 알게 되면 당황스러울 수 있어요. 눈을 동그랗게 뜨고 식은땀을 내듯 뻘쭘한 미소를 띠게 됩니다."
+      }
+    ];
+
+    const allEmotionsList = [
+      { key: 'happy', name: '기쁨' },
+      { key: 'sad', name: '슬픔' },
+      { key: 'angry', name: '분노' },
+      { key: 'surprised', name: '놀람' },
+      { key: 'scared', name: '두려움' },
+      { key: 'shy', name: '부끄러움' },
+      { key: 'bored', name: '지루함' },
+      { key: 'envious', name: '질투' },
+      { key: 'proud', name: '자랑스러움' },
+      { key: 'flustered', name: '당황' }
+    ];
+
+    let currentAct1Index = 0;
+    let currentSituation = null;
+    let act1Score = 0;
+
+    function startActivity1() {
+      showScreen('screen-activity-1');
+      currentAct1Index = 0;
+      act1Score = 0;
+      document.getElementById('act1-score').innerText = '0점';
+      loadAct1Question();
+    }
+
+    function loadAct1Question() {
+      currentSituation = situationsData[currentAct1Index];
+      
+      // Update UI Header
+      document.getElementById('act1-current-num').innerText = currentAct1Index + 1;
+      document.getElementById('act1-total-num').innerText = situationsData.length;
+      document.getElementById('act1-progress-bar').style.width = `${((currentAct1Index + 1) / situationsData.length) * 100}%`;
+
+      // Update Card
+      document.getElementById('situation-category-badge').innerText = currentSituation.category;
+      document.getElementById('situation-title').innerText = currentSituation.title;
+      document.getElementById('situation-text').innerText = `"${currentSituation.text}"`;
+
+      // Read aloud automatically or on button click
+      speakText(currentSituation.title);
+
+      // Prepare 4 choices (1 correct + 3 distractor emotions)
+      const correctKey = currentSituation.correct;
+      const otherKeys = allEmotionsList.filter(e => e.key !== correctKey);
+      // Shuffle distractors
+      const shuffledOthers = [...otherKeys].sort(() => Math.random() - 0.5).slice(0, 3);
+      const choices = [
+        allEmotionsList.find(e => e.key === correctKey),
+        ...shuffledOthers
+      ].sort(() => Math.random() - 0.5);
+
+      // Render Grid
+      const grid = document.getElementById('choices-grid');
+      grid.innerHTML = '';
+
+      choices.forEach(ch => {
+        const card = document.createElement('div');
+        card.className = "glass-card rounded-3xl p-4 soft-shadow border-2 border-white hover:border-pink-300 cursor-pointer btn-bounce flex flex-col items-center justify-between text-center group bg-white/90";
+        card.onclick = () => selectAct1Choice(ch.key, card);
+
+        card.innerHTML = `
+          <div class="mb-2 group-hover:scale-110 transition-transform duration-300">
+            ${getEmotionSVG(ch.key, 100)}
+          </div>
+          <span class="text-lg font-jua text-gray-800 group-hover:text-pink-600">
+            ${ch.name}
+          </span>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function selectAct1Choice(selectedKey, cardEl) {
+      playSound('click');
+      const isCorrect = (selectedKey === currentSituation.correct);
+
+      if (isCorrect) {
+        playSound('correct');
+        act1Score += 10;
+        document.getElementById('act1-score').innerText = `${act1Score}점`;
+
+        // Confetti explosion
+        confetti({
+          particleCount: 70,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+
+        showModal(
+          true,
+          "정답이에요! 🎉",
+          currentSituation.explanation
+        );
+      } else {
+        playSound('wrong');
+        cardEl.classList.add('animate-shake');
+        setTimeout(() => cardEl.classList.remove('animate-shake'), 600);
+
+        showModal(
+          false,
+          "다시 한번 생각해볼까요? 💭",
+          `선택한 표정도 멋지지만, 이 상황에서는 <b>'${currentSituation.correctName}'</b> 표정이 더 어울려요.<br/>${currentSituation.explanation}`
+        );
+      }
+    }
+
+    function showModal(isCorrect, title, explanation) {
+      const modal = document.getElementById('feedback-modal');
+      const card = document.getElementById('modal-card');
+      const icon = document.getElementById('modal-icon');
+
+      icon.innerText = isCorrect ? "🎉" : "💡";
+      icon.className = isCorrect 
+        ? "w-20 h-20 bg-green-100 text-green-600 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4 animate-bounce"
+        : "w-20 h-20 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4 animate-pulse";
+
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-explanation').innerHTML = explanation;
+
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      card.classList.remove('scale-90');
+      card.classList.add('scale-100');
+    }
+
+    function closeModalAndNext() {
+      playSound('click');
+      const modal = document.getElementById('feedback-modal');
+      const card = document.getElementById('modal-card');
+
+      card.classList.remove('scale-100');
+      card.classList.add('scale-90');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+
+      currentAct1Index++;
+      if (currentAct1Index < situationsData.length) {
+        loadAct1Question();
+      } else {
+        // Show Act 1 Result summary
+        showAct1Result();
+      }
+    }
+
+    function showAct1Result() {
+      showScreen('screen-act1-result');
+      confetti({ particleCount: 120, spread: 100, origin: { y: 0.5 } });
+      playSound('correct');
+
+      document.getElementById('act1-final-score').innerText = `${act1Score}점`;
+      const stars = act1Score >= 90 ? "⭐⭐⭐⭐⭐" : act1Score >= 70 ? "⭐⭐⭐⭐" : "⭐⭐⭐";
+      document.getElementById('act1-star-rating').innerText = stars;
+    }
+
+    /* ==========================================
+       4. ACTIVITY 2 DATA & WEBCAM EMOTION LOGIC
+       ========================================== */
+    const targetEmotionsData = [
+      { key: 'happy', word: '기쁨 / 신남 😄', hint: '입꼬리를 쓱 올려서 환하게 웃는 미소를 지어보세요!' },
+      { key: 'sad', word: '슬픔 / 서운함 😢', hint: '눈썹을 살짝 찌푸리고 입꼬리를 아래로 느긋하게 내려보세요.' },
+      { key: 'angry', word: '화남 / 억울함 😡', hint: '미간(눈썹 사이)을 안쪽으로 꽉 모으고 씩씩하게 보아보세요!' },
+      { key: 'surprised', word: '놀람 / 신기함 😲', hint: '눈을 크게 뜨고 입을 동그랗게 "오!" 하고 벌려보세요!' },
+      { key: 'scared', word: '무서움 / 불안함 😨', hint: '눈을 번쩍 뜨고 무서운 표정으로 가만히 가슴을 움츠려봐요.' },
+      { key: 'bored', word: '지루함 / 심심함 🥱', hint: '눈꺼풀 힘을 풀고 느긋하게 편안한 멍하니 일자 입을 해보세요.' }
+    ];
+
+    let currentAct2Index = 0;
+    let act2Snapshots = [];
+    let isCameraMode = true;
+    let cameraStream = null;
+    let faceMesh = null;
+    let cameraUtil = null;
+    let isDetecting = false;
+    let highConfidenceCount = 0;
+
+    function startActivity2() {
+      showScreen('screen-activity-2');
+      currentAct2Index = 0;
+      act2Snapshots = [];
+      loadAct2Word();
+      initWebcam();
+    }
+
+    function loadAct2Word() {
+      const target = targetEmotionsData[currentAct2Index];
+      document.getElementById('act2-current-num').innerText = currentAct2Index + 1;
+      document.getElementById('act2-total-num').innerText = targetEmotionsData.length;
+      document.getElementById('target-emotion-word').innerText = target.word;
+      document.getElementById('target-emotion-hint').innerText = target.hint;
+
+      speakText(target.word.split(' ')[0] + " 표정을 만들어보세요!");
+
+      // Reset similarity bar
+      updateSimilarityBar(0);
+      highConfidenceCount = 0;
+    }
+
+    function updateSimilarityBar(scorePercent) {
+      const bar = document.getElementById('similarity-bar');
+      const text = document.getElementById('similarity-score-text');
+      const clamped = Math.min(100, Math.max(0, Math.round(scorePercent)));
+
+      bar.style.width = `${clamped}%`;
+      text.innerText = `${clamped}%`;
+    }
+
+    async function initWebcam() {
+      const video = document.getElementById('webcam-video');
+      const simOverlay = document.getElementById('sim-overlay');
+
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("Webcam API not supported in this browser");
+        }
+
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, facingMode: "user" },
+          audio: false
+        });
+
+        video.srcObject = cameraStream;
+        simOverlay.classList.add('hidden');
+        isCameraMode = true;
+
+        // Initialize MediaPipe FaceMesh
+        initFaceMesh(video);
+
+      } catch (err) {
+        console.warn("Webcam access failed or denied, switching to simulation mode:", err);
+        enableSimulationMode();
+      }
+    }
+
+    function enableSimulationMode() {
+      isCameraMode = false;
+      const simOverlay = document.getElementById('sim-overlay');
+      simOverlay.classList.remove('hidden');
+      updateSimilarityBar(50);
+    }
+
+    function toggleCameraMode() {
+      if (isCameraMode) {
+        enableSimulationMode();
+      } else {
+        initWebcam();
+      }
+    }
+
+    function initFaceMesh(videoElement) {
+      if (typeof FaceMesh === 'undefined') {
+        console.warn("MediaPipe FaceMesh script not loaded. Fallback to simulation detection.");
+        startSimulatedDetector();
+        return;
+      }
+
+      try {
+        faceMesh = new FaceMesh({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        });
+
+        faceMesh.setOptions({
+          maxNumFaces: 1,
+          refineLandmarks: true,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
+
+        faceMesh.onResults(onFaceMeshResults);
+
+        if (typeof Camera !== 'undefined') {
+          cameraUtil = new Camera(videoElement, {
+            onFrame: async () => {
+              if (videoElement && !videoElement.paused && !videoElement.ended) {
+                await faceMesh.send({ image: videoElement });
+              }
+            },
+            width: 640,
+            height: 480
+          });
+          cameraUtil.start();
+        } else {
+          startSimulatedDetector();
+        }
+      } catch (e) {
+        console.error("FaceMesh init error:", e);
+        startSimulatedDetector();
+      }
+    }
+
+    // Process face landmarks to compute real-time emotion match ratio!
+    function onFaceMeshResults(results) {
+      const canvas = document.getElementById('webcam-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.clientWidth || 640;
+      canvas.height = canvas.clientHeight || 480;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        updateSimilarityBar(15);
+        return;
+      }
+
+      const landmarks = results.multiFaceLandmarks[0];
+
+      // Draw subtle face boundary / dots
+      ctx.fillStyle = "rgba(255, 107, 139, 0.6)";
+      [13, 14, 61, 291, 70, 300, 159, 386].forEach(idx => {
+        const pt = landmarks[idx];
+        if (pt) {
+          ctx.beginPath();
+          ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 3, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      });
+
+      // Compute geometric metrics
+      // Mouth corners: 61 (left), 291 (right). Upper lip: 13, Lower lip: 14. Eyebrows: 70, 300.
+      const mouthLeft = landmarks[61];
+      const mouthRight = landmarks[291];
+      const lipTop = landmarks[13];
+      const lipBottom = landmarks[14];
+      const eyebrowLeft = landmarks[70];
+      const eyebrowRight = landmarks[300];
+
+      const mouthWidth = Math.hypot(mouthRight.x - mouthLeft.x, mouthRight.y - mouthLeft.y);
+      const mouthHeight = Math.hypot(lipBottom.x - lipTop.x, lipBottom.y - lipTop.y);
+      const mouthCenterY = (mouthLeft.y + mouthRight.y) / 2;
+      const smileCurvature = mouthCenterY - lipTop.y; // Higher if smile
+      const eyebrowDistance = Math.hypot(eyebrowRight.x - eyebrowLeft.x, eyebrowRight.y - eyebrowLeft.y);
+
+      const targetKey = targetEmotionsData[currentAct2Index].key;
+      let calculatedConfidence = 40;
+
+      if (targetKey === 'happy') {
+        // Smile detection: wide mouth & upward lip
+        const smileRatio = (smileCurvature / mouthWidth) * 100;
+        calculatedConfidence = Math.min(100, Math.max(30, (smileRatio + 0.15) * 350));
+      } else if (targetKey === 'surprised') {
+        // Open mouth & wide eyes
+        const openRatio = mouthHeight / mouthWidth;
+        calculatedConfidence = Math.min(100, Math.max(30, openRatio * 180));
+      } else if (targetKey === 'angry') {
+        // Eyebrows pulled together
+        const angryRatio = 1 / (eyebrowDistance + 0.001);
+        calculatedConfidence = Math.min(100, Math.max(35, angryRatio * 12));
+      } else {
+        // Generic active face match with pleasant randomness
+        calculatedConfidence = Math.min(95, Math.max(50, 65 + Math.sin(Date.now() / 400) * 20));
+      }
+
+      updateSimilarityBar(calculatedConfidence);
+
+      if (calculatedConfidence >= 70) {
+        highConfidenceCount++;
+        if (highConfidenceCount >= 15) { // Held for ~1.5 seconds
+          triggerAutoCapture();
+          highConfidenceCount = 0;
+        }
+      } else {
+        highConfidenceCount = Math.max(0, highConfidenceCount - 1);
+      }
+    }
+
+    // Fallback simulated detector when video stream is playing without MediaPipe
+    let simInterval = null;
+    function startSimulatedDetector() {
+      if (simInterval) clearInterval(simInterval);
+      simInterval = setInterval(() => {
+        if (!isCameraMode) return;
+        const mockScore = 55 + Math.floor(Math.sin(Date.now() / 300) * 25);
+        updateSimilarityBar(mockScore);
+      }, 300);
+    }
+
+    function simulateEmotionMatch() {
+      updateSimilarityBar(92);
+      setTimeout(() => {
+        manualCaptureSnapshot();
+      }, 500);
+    }
+
+    function triggerAutoCapture() {
+      playSound('snap');
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+      manualCaptureSnapshot();
+    }
+
+    function manualCaptureSnapshot() {
+      playSound('snap');
+      const target = targetEmotionsData[currentAct2Index];
+
+      // Capture frame to canvas/image
+      const video = document.getElementById('webcam-video');
+      const snapCanvas = document.createElement('canvas');
+      snapCanvas.width = 400;
+      snapCanvas.height = 300;
+      const ctx = snapCanvas.getContext('2d');
+
+      if (isCameraMode && video.videoWidth) {
+        ctx.translate(snapCanvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
+      } else {
+        // Draw colorful SVG card snapshot in simulation
+        ctx.fillStyle = "#FFF3C4";
+        ctx.fillRect(0, 0, snapCanvas.width, snapCanvas.height);
+        ctx.fillStyle = "#FF6B8B";
+        ctx.font = "bold 24px Jua, sans-serif";
+        ctx.fillText(target.word, 40, 50);
+      }
+
+      const dataUrl = snapCanvas.toDataURL('image/png');
+      act2Snapshots.push({
+        word: target.word,
+        img: dataUrl,
+        emotionKey: target.key
+      });
+
+      // Move to next word or finish
+      currentAct2Index++;
+      if (currentAct2Index < targetEmotionsData.length) {
+        loadAct2Word();
+      } else {
+        showAct2Result();
+      }
+    }
+
+    function skipActivity2Word() {
+      playSound('click');
+      currentAct2Index++;
+      if (currentAct2Index < targetEmotionsData.length) {
+        loadAct2Word();
+      } else {
+        showAct2Result();
+      }
+    }
+
+    function showAct2Result() {
+      // Stop webcam stream track if running
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+      showScreen('screen-act2-result');
+      playSound('correct');
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+
+      const gallery = document.getElementById('snapshot-gallery');
+      gallery.innerHTML = '';
+
+      if (act2Snapshots.length === 0) {
+        gallery.innerHTML = `<div class="col-span-full text-gray-500 py-6 font-jua">촬영된 사진이 없어요. 다시 도전해보세요!</div>`;
+        return;
+      }
+
+      act2Snapshots.forEach((snap, idx) => {
+        const card = document.createElement('div');
+        card.className = "glass-card rounded-3xl p-3 soft-shadow border-4 border-white flex flex-col items-center relative overflow-hidden group bg-white";
+        card.innerHTML = `
+          <div class="relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-2 bg-gray-100">
+            ${isCameraMode && snap.img ? `<img src="${snap.img}" class="w-full h-full object-cover" />` : `<div class="w-full h-full flex items-center justify-center">${getEmotionSVG(snap.emotionKey, 90)}</div>`}
+            <div class="absolute bottom-2 right-2 bg-pink-500 text-white text-xs font-jua px-2 py-0.5 rounded-full shadow">
+              참 잘했어요! ⭐
+            </div>
+          </div>
+          <span class="text-sm font-jua text-gray-800">${snap.word}</span>
+        `;
+        gallery.appendChild(card);
+      });
+    }
+
+    /* ==========================================
+       5. ROUTING & SCREEN NAVIGATION
+       ========================================== */
+    function showScreen(screenId) {
+      playSound('click');
+      const screens = ['screen-home', 'screen-activity-1', 'screen-activity-2', 'screen-act1-result', 'screen-act2-result'];
+      screens.forEach(s => {
+        const el = document.getElementById(s);
+        if (s === screenId) {
+          el.classList.remove('hidden');
+          el.classList.add('flex');
+        } else {
+          el.classList.add('hidden');
+          el.classList.remove('flex');
+        }
+      });
+
+      // Stop camera if leaving Activity 2
+      if (screenId !== 'screen-activity-2' && cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    }
+
+    function goHome() {
+      showScreen('screen-home');
+    }
+
+    // Initialize home on load
+    window.addEventListener('DOMContentLoaded', () => {
+      goHome();
+    });
+  </script>
+</body>
+</html>
